@@ -3,9 +3,35 @@ import { analyzePost } from './nlp.ts';
 import * as readline from 'readline';
 
 async function browseAndAnalyze(urls: string[]) {
+    // Show the browser window while Playwright is working.
+    // You can set SHOW_BROWSER=0 in env to avoid showing (if needed).
+    const showBrowser = process.env.SHOW_BROWSER === '0' ? false : true;
     const browser = await chromium.launch({
-        headless: true,
-        args: ['--disable-blink-features=AutomationControlled'],
+        headless: !showBrowser,                // headful when showBrowser=true
+        devtools: showBrowser,                 // open devtools when visible
+        slowMo: showBrowser ? 40 : 0,          // slight slowdown to observe actions
+        args: [
+            '--disable-blink-features=AutomationControlled',
+            '--start-maximized',
+        ],
+    });
+
+    // Build a realistic set of HTTP headers commonly sent by browsers.
+    const buildBaseHeaders = () => ({
+        accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+        'accept-language': 'en-US,en;q=0.9',
+        dnt: '1',
+        'upgrade-insecure-requests': '1',
+        'sec-fetch-site': 'none',
+        'sec-fetch-mode': 'navigate',
+        'sec-fetch-user': '?1',
+        'sec-fetch-dest': 'document',
+        'cache-control': 'max-age=0',
+        pragma: 'no-cache',
+        // Client hint style headers (use conservative values that mimic Chrome)
+        'sec-ch-ua': '"Chromium";v="115", "Not A(Brand";v="8", "Google Chrome";v="115"',
+        'sec-ch-ua-platform': '"Windows"',
+        'sec-ch-ua-mobile': '?0',
     });
 
     const context = await browser.newContext({
@@ -13,13 +39,32 @@ async function browseAndAnalyze(urls: string[]) {
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
         locale: 'en-US',
         viewport: { width: 1280, height: 800 },
+        extraHTTPHeaders: buildBaseHeaders(), // set base headers at context level
     });
 
     const page = await context.newPage();
+    // Helper to set per-page headers (adds referer derived from target URL if available)
+    async function applyHeadersForUrl(p: any, targetUrl?: string) {
+        try {
+            const headers = { ...buildBaseHeaders() } as Record<string, string>;
+            if (targetUrl) {
+                try {
+                    const u = new URL(targetUrl);
+                    headers.referer = u.origin;
+                } catch { /* ignore invalid URL */ }
+            }
+            await p.setExtraHTTPHeaders(headers);
+        } catch (e) {
+            // Non-fatal if setting headers fails
+            console.warn('Failed to apply extra headers:', e?.message || e);
+        }
+    }
 
     for (const url of urls) {
         console.log(`Browsing: ${url}`);
         try {
+            // apply realistic headers including referer for this navigation
+            await applyHeadersForUrl(page, url);
             await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {});
             await page.waitForLoadState('networkidle').catch(() => {});
 
@@ -29,20 +74,13 @@ async function browseAndAnalyze(urls: string[]) {
                 continue;
             }
 
-            const selectors = [
-                '.post',
-                'div.Post',
-                'div[data-testid="post-container"]',
-                'div[data-test-id="post-content"]',
-            ];
-
             // Iteratively scroll to load more posts, collect them, and analyze in chunks of 10
             const collectedSet = new Set<string>();
             let processedCount = 0;
             const INITIAL_BATCH = 10;          // only load/analyze 10 posts initially
             let initialBatchDone = false;
-            const CHUNK_SIZE = 5;
-            const MAX_SCROLLS = 2;
+            const CHUNK_SIZE = 3;
+            const MAX_SCROLLS = 3;
             const NO_NEW_LIMIT = 5;
             let scrolls = 0;
             let noNewCount = 0;
@@ -75,7 +113,7 @@ async function browseAndAnalyze(urls: string[]) {
 
                             // Generate product/service ideas and accumulate into the ideaStore
                             try {
-                                const ideas = generateProductIdeas(insight, post);
+                                const ideas = await generateProductIdeas(insight, post);
                                 const sentiment = (insight?.sentiment || '').toString().toLowerCase();
                                 const sScore = sentiment.includes('pos') ? 1 : sentiment.includes('neg') ? -1 : 0;
                                 const topics: string[] = Array.isArray(insight?.topics) ? insight.topics.map(String) : [];
@@ -132,7 +170,7 @@ async function browseAndAnalyze(urls: string[]) {
                     const initialChunk = allPosts.slice(processedCount, processedCount + INITIAL_BATCH);
                     const ideaStore = new Map<string, IdeaEntry>();
                     await analyzeChunk(initialChunk, ideaStore);
-                    finalizeIdeasAndDisplay(ideaStore);
+                    await finalizeIdeasAndDisplay(ideaStore);
                     initialBatchDone = true;
 
                     // Ask user whether to continue loading more posts and analysis
@@ -167,7 +205,7 @@ async function browseAndAnalyze(urls: string[]) {
                     const ideaStore = new Map<string, IdeaEntry>();
                     await analyzeChunk(chunk, ideaStore);
                     // finalize and display ideas for this batch
-                    finalizeIdeasAndDisplay(ideaStore);
+                    await finalizeIdeasAndDisplay(ideaStore);
 
                     // ask user whether to continue after this batch
                     try {
@@ -206,7 +244,7 @@ async function browseAndAnalyze(urls: string[]) {
                 console.log(`Processing final ${remaining.length} remaining posts`);
                 const ideaStore = new Map<string, IdeaEntry>();
                 await analyzeChunk(remaining, ideaStore);
-                finalizeIdeasAndDisplay(ideaStore);
+                await finalizeIdeasAndDisplay(ideaStore);
                 // final batch prompt after remaining partial chunk
                 try {
                     const cont = await askContinue();
@@ -262,6 +300,32 @@ const rl = readline.createInterface({
     output: process.stdout,
 });
 
+// Print a compact graphical intro/banner when the agent is invoked
+function printIntro() {
+    const bold = '\x1b[1m';
+    const cyan = '\x1b[36m';
+    const yellow = '\x1b[33m';
+    const reset = '\x1b[0m';
+
+    const art = [
+        '_________                                                                       \n' +
+        '/   _____/ ___________  ____  __ __  ____   ____                                \n' +
+        '\\_____  \\_/ ___\\_  __ \\/  _ \\|  |  \\/ ___\\_/ __ \\                               \n' +
+        '/        \\  \\___|  | \\(  <_> )  |  / /_/  >  ___/                               \n' +
+       '/_______  /\\___  >__|   \\____/|____/\\___  / \\___  >                              \n' +
+        '       \\/     \\/                  /_____/      \\/                               \n'
+    ];
+
+    console.log(cyan + bold + 'Scrouge — Market Idea Agent' + reset);
+    art.forEach(line => console.log(cyan + line + reset));
+    console.log('');
+    console.log(yellow + 'Tips:' + reset + ' set SHOW_BROWSER=0 to run headless; set OPENAI_API_KEY to enable LLM suggestions.');
+    console.log('');
+}
+
+// show intro immediately when the script runs
+printIntro();
+
 rl.question('Enter URLs separated by commas: ', (input) => {
     const urls = input.split(',').map(url => url.trim());
     browseAndAnalyze(urls).catch(console.error).finally(() => rl.close());
@@ -273,6 +337,12 @@ async function askContinue(): Promise<boolean> {
         try {
             rl.question('Continue to next batch? (y/n): ', (ans) => {
                 const a = (ans || '').trim().toLowerCase();
+                if (a === 'n' || a === 'no') {
+                    console.log('Quitting by user request.');
+                    try { rl.close(); } catch {}
+                    // exit immediately
+                    process.exit(0);
+                }
                 resolve(a === 'y' || a === 'yes');
             });
         } catch {
@@ -591,102 +661,55 @@ async function fetchPostsFromPage(page: any): Promise<string[]> {
 }
 
 // Generate a short list of product/service ideas from analysis insight.
-function generateProductIdeas(insight: any, postText?: string): string[] {
-    const ideas = new Set<string>();
-    const summary = (insight?.summary || '').toString();
-    const sentiment = (insight?.sentiment || '').toString().toLowerCase();
-    const topics: string[] = Array.isArray(insight?.topics) ? insight.topics.map(String) : [];
-
-    const norm = (t: string) => t.replace(/[^a-zA-Z0-9\s\-]/g, '').trim();
-
-    for (const raw of topics.slice(0, 6)) {
-        const t = norm(raw);
-        if (!t) continue;
-        ideas.add(`Starter kit for ${t} enthusiasts (bundle of essentials)`);
-        ideas.add(`Premium accessory/product for ${t} — upsell for power users`);
-        ideas.add(`Curated subscription delivering ${t}-related items or deals`);
+async function generateProductIdeas(insight: any, postText?: string): Promise<string[]> {
+    const key = process.env.OPENAI_API_KEY;
+    // simple fallback kept minimal
+    function fallbackGenerator(): string[] {
+        const summary = (insight?.summary || '').toString().replace(/\s+/g, ' ').trim();
+        if (!summary) return [];
+        return [
+            `Concise solution guide: "${summary.slice(0, 120)}" — targeted info product to validate demand.`,
+        ].slice(0, 3);
     }
+    if (!key) return fallbackGenerator();
 
-    if (summary) {
-        if (summary.length < 200) {
-            ideas.add(`Concise guide or checklist based on: "${summary.slice(0, 120)}"`);
-        } else {
-            ideas.add('In-depth ebook or short online course addressing the key concern in the summary');
-        }
-    }
+    const input = {
+        summary: (insight?.summary || '').toString().replace(/\s+/g, ' ').trim().slice(0, 800),
+        sentiment: (insight?.sentiment || '').toString().toLowerCase(),
+        topics: Array.isArray(insight?.topics) ? insight.topics.map(String).slice(0, 5) : [],
+        examples: Array.isArray(insight?.examples) ? insight.examples.map(String).slice(0, 2) : [],
+        post: (postText || '').toString().slice(0, 800),
+    };
 
-    if (sentiment.includes('neg') || /problem|issue|struggl|complain/i.test(summary)) {
-        ideas.add('Problem-solver product: a tool or kit that directly addresses the described pain point');
-        ideas.add('Concierge/premium service to remove friction for these customers');
-    } else if (sentiment.includes('pos') || /love|enjoy|happy|great/i.test(summary)) {
-        ideas.add('Upsell or premium tier targeting satisfied customers (enhanced features/accessories)');
-    } else {
-        ideas.add('Introductory product/trial offer to convert curious/neutral customers');
-    }
+    // Strong instruction to produce non-obvious, high-value opportunities only.
+    const systemPrompt = `You are a senior product strategy advisor focused on high-leverage, differentiated, revenue-ready opportunities. Ignore generic "guides", "subscriptions" or trivial productizations unless you can justify why they are unique and high-value.`;
 
-    if (postText && /\bbuy|purchase|where can i get|recommend\b/i.test(postText)) {
-        ideas.add('Direct product recommendation list with quick-purchase links');
-    }
+    const userPrompt = `Input JSON:
+${JSON.stringify(input, null, 2)}
 
-    return Array.from(ideas).slice(0, 8);
-}
+TASK: Return AT MOST 3 non-obvious, high-value product or service ideas that are clearly differentiated and monetizable. Each idea must be a single string in this exact compact format (no extra text, return EXACTLY a JSON array of strings):
 
-// Compute a simple score and render detailed documents for each idea (sorted by estimated revenue)
-function finalizeIdeasAndDisplay(ideaStore: Map<string, any>) {
-    if (!ideaStore || ideaStore.size === 0) {
-        console.log('No product ideas generated for this batch.');
-        return;
-    }
+"Title — 1-line pitch (what it does) | Why this is high-value & differentiated (one short reason) | Suggested price/packaging"
 
-    // Build structured payload for the LLM (limit to avoid huge requests)
-    const MAX_ITEMS_TO_SEND = 30;
-    const ideasPayload: any[] = [];
-    for (const [idea, entry] of ideaStore.entries()) {
-        ideasPayload.push({
-            idea: String(idea),
-            count: entry.count || 0,
-            sentimentSum: entry.sentimentSum || 0,
-            topics: Array.isArray(entry.topics) ? entry.topics : Array.from(entry.topics || []),
-            examples: Array.isArray(entry.examples) ? entry.examples : (entry.examples ? Array.from(entry.examples) : []),
-            reasons: entry.reasons ? Array.from(entry.reasons) : [],
-        });
-        if (ideasPayload.length >= MAX_ITEMS_TO_SEND) break;
-    }
+Examples (do NOT copy these): 
+["On-demand field calibration service — Rapid on-site calibration for [topic] | High-value because it eliminates costly downtime for pros | Suggested: $299/site or $49/mo monitoring"]
 
-    const systemPrompt = `You are an expert product/market analyst. Given a list of candidate product ideas with simple signals (count, sentimentSum, topics, examples, reasons), rank them by priority and produce a concise JSON output only (no extra commentary). The output must be EXACT valid JSON in this format:
+Constraints:
+- Be specific (mention the target user or context).
+- Emphasize why it's non-obvious (unique channel, technical moat, business model lever).
+- Prioritize ideas that can command $100+ initial or $20+/mo recurring where sensible.
+- Limit to max 3 items. Return EXACTLY one JSON array and nothing else.`;
 
-{
-  "ranked": [
-    {
-      "idea": "string",
-      "priority": 1,
-      "score": 4.2,
-      "rationale": "short text (why this ranks highly)",
-      "estimated_revenue_usd": 12345,
-      "recommended_price_range": "string (e.g. $29-$99 or $5/mo)",
-      "go_to_market_channels": ["channel1","channel2"],
-      "examples": ["example post 1", "..."]
-    }
-  ]
-}
-
-Be concise in rationale and ensure the JSON is parseable. Use numeric fields where indicated.`;
-
-    const userPrompt = `Here is the input array (JSON). Produce the output described above and sort items by priority (1 highest). Input:
-${JSON.stringify({ ideas: ideasPayload }, null, 2)}`;
-
-    async function callLLMRaw(): Promise<string> {
-        const key = process.env.OPENAI_API_KEY;
-        if (!key) throw new Error('OPENAI_API_KEY is required in environment');
-
+    // helper calling LLM
+    async function callLLMIdeas(): Promise<string> {
         const body = {
-            model: 'gpt-5.1',
+            model: 'gpt-4o-mini',
             messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: userPrompt },
             ],
             temperature: 0.0,
-            max_completion_tokens: 15000,
+            max_tokens: 600,
         };
 
         const resp = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -709,57 +732,155 @@ ${JSON.stringify({ ideas: ideasPayload }, null, 2)}`;
         return content;
     }
 
-    // tolerant parser: extract JSON block, remove trailing commas and retry
-    function safeParseJSON(content: string): any {
+    // tolerant parsing for a JSON array of strings
+    function parseArrayFromContent(content: string): string[] | null {
         if (!content || typeof content !== 'string') return null;
-        // Find the first balanced JSON object block heuristically
-        const firstBrace = content.indexOf('{');
-        const lastBrace = content.lastIndexOf('}');
-        if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
-            return null;
-        }
-        let jsonText = content.slice(firstBrace, lastBrace + 1);
+        const first = content.indexOf('[');
+        const last = content.lastIndexOf(']');
+        if (first === -1 || last === -1 || last <= first) return null;
+        let arrText = content.slice(first, last + 1);
         try {
-            return JSON.parse(jsonText);
-        } catch (e) {
-            // Try to remove trailing commas in objects/arrays: ,}
+            const parsed = JSON.parse(arrText);
+            if (Array.isArray(parsed)) return parsed.map(String).map(s => s.trim()).filter(Boolean).slice(0, 3);
+            return null;
+        } catch {
             try {
-                const sanitized = jsonText.replace(/,\s*([}\]])/g, '$1');
-                return JSON.parse(sanitized);
-            } catch (e2) {
-                // last-resort: attempt to fix common issues like smart quotes (very conservative)
-                try {
-                    const fixedQuotes = jsonText.replace(/[\u2018\u2019\u201C\u201D]/g, '"');
-                    const sanitized2 = fixedQuotes.replace(/,\s*([}\]])/g, '$1');
-                    return JSON.parse(sanitized2);
-                } catch (_e3) {
-                    // give up
-                    return null;
-                }
+                const sanitized = arrText.replace(/,\s*([}\]])/g, '$1').replace(/[\u2018\u2019\u201C\u201D]/g, '"');
+                const parsed2 = JSON.parse(sanitized);
+                if (Array.isArray(parsed2)) return parsed2.map(String).map(s => s.trim()).filter(Boolean).slice(0, 3);
+                return null;
+            } catch {
+                return null;
             }
         }
     }
 
-    // call with retry/backoff and then parse tolerant
-    retryWithBackoff(() => callLLMRaw(), {
-        retries: 3,
-        baseDelayMs: 800,
-        factor: 2,
-        onRetry: (err, attempt) => console.warn('LLM ranking retry', attempt, err?.message || err),
-    }).then((rawContent: string) => {
-        const parsed = safeParseJSON(rawContent);
-        if (!parsed || !Array.isArray(parsed.ranked) || parsed.ranked.length === 0) {
-            console.warn('LLM returned unparsable JSON or no ranked items. Raw output below (truncated):');
-            console.warn(rawContent.slice(0, 800)); // show start for debugging
-            // Fallback: list idea headlines
-            console.log('Fallback — listing idea headlines:');
-            for (const it of ideasPayload) {
-                console.log(' - ' + it.idea);
+    // Basic generic-filter to drop obviously vague items
+    function filterGeneric(items: string[]): string[] {
+        const genericPatterns = [/guide/i, /checklist/i, /subscription delivering/i, /curated/i, /introductory/i];
+        const filtered: string[] = [];
+        for (const it of items) {
+            const low = it.toLowerCase();
+            const isGeneric = genericPatterns.some(p => p.test(low));
+            if (!isGeneric && !filtered.includes(it)) filtered.push(it);
+        }
+        // If everything is filtered out, return original up to 3
+        return filtered.length > 0 ? filtered.slice(0, 3) : items.slice(0, 3);
+    }
+
+    try {
+        const raw = await retryWithBackoff(() => callLLMIdeas(), {
+            retries: 2,
+            baseDelayMs: 800,
+            factor: 2,
+            onRetry: (err, attempt) => console.warn('LLM idea retry', attempt, err?.message || err),
+        });
+
+        const parsed = parseArrayFromContent(raw);
+        if (parsed && parsed.length > 0) {
+            return filterGeneric(parsed);
+        }
+
+        // loose fallback: extract plausible lines
+        const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 30);
+        if (lines.length > 0) return filterGeneric(lines).slice(0, 3);
+
+        console.warn('Failed to parse LLM ideas JSON, falling back. Raw (truncated):', raw.slice(0, 800));
+        return fallbackGenerator();
+    } catch (e) {
+        console.warn('Error generating product ideas with LLM:', e?.message || e);
+        return fallbackGenerator();
+    }
+}
+
+// Compute a simple score and render detailed documents for each idea (sorted by estimated revenue)
+async function finalizeIdeasAndDisplay(ideaStore: Map<string, any>): Promise<void> {
+    if (!ideaStore || ideaStore.size === 0) {
+        console.log('No product ideas generated for this batch.');
+        return;
+    }
+
+    // Build structured payload for the LLM (limit to avoid huge requests)
+    const MAX_ITEMS_TO_SEND = 30;
+    const ideasPayload: any[] = [];
+    for (const [idea, entry] of ideaStore.entries()) {
+        ideasPayload.push({
+            idea: String(idea),
+            count: entry.count || 0,
+            sentimentSum: entry.sentimentSum || 0,
+            topics: Array.isArray(entry.topics) ? entry.topics : Array.from(entry.topics || []),
+            examples: Array.isArray(entry.examples) ? entry.examples : (entry.examples ? Array.from(entry.examples) : []),
+            reasons: entry.reasons ? Array.from(entry.reasons) : [],
+        });
+        if (ideasPayload.length >= MAX_ITEMS_TO_SEND) break;
+    }
+
+    const systemPrompt = `You are an expert product/market analyst. Given a list of candidate product ideas with simple signals (count, sentimentSum, topics, examples, reasons), rank them by priority and return a concise JSON object only with the shape: {"ranked":[{"idea":"string","priority":1,"score":4.2,"rationale":"text","estimated_revenue_usd":12345,"recommended_price_range":"$","go_to_market_channels":["c"],"examples":["..."]}]}.`;
+    const userPrompt = `Input:\n${JSON.stringify({ ideas: ideasPayload }, null, 2)}\n\nOutput must be EXACT valid JSON as described. Keep rationale concise.`;
+
+    async function callLLMRaw(): Promise<string> {
+        const key = process.env.OPENAI_API_KEY;
+        if (!key) throw new Error('OPENAI_API_KEY is required in environment');
+        const body = {
+            model: 'gpt-5.1',
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userPrompt },
+            ],
+            temperature: 0.0,
+            max_completion_tokens: 15000,
+        };
+        const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${key}`,
+            },
+            body: JSON.stringify(body),
+        });
+        if (!resp.ok) {
+            const txt = await resp.text().catch(() => '');
+            throw new Error(`LLM request failed: ${resp.status} ${resp.statusText} - ${txt}`);
+        }
+        const json = await resp.json().catch(() => null);
+        const content = json?.choices?.[0]?.message?.content || json?.choices?.[0]?.text || '';
+        if (!content) throw new Error('Empty LLM response');
+        return content;
+    }
+
+    // tolerant parser extracting first {...}
+    function safeParseJSON(content: string): any | null {
+        if (!content || typeof content !== 'string') return null;
+        const first = content.indexOf('{');
+        const last = content.lastIndexOf('}');
+        if (first === -1 || last === -1 || last <= first) return null;
+        let jsonText = content.slice(first, last + 1);
+        try { return JSON.parse(jsonText); } catch {
+            try {
+                const sanitized = jsonText.replace(/,\s*([}\]])/g, '$1').replace(/[\u2018\u2019\u201C\u201D]/g, '"');
+                return JSON.parse(sanitized);
+            } catch {
+                return null;
             }
+        }
+    }
+
+    try {
+        const raw = await retryWithBackoff(() => callLLMRaw(), {
+            retries: 2,
+            baseDelayMs: 800,
+            factor: 2,
+            onRetry: (err, attempt) => console.warn('LLM ranking retry', attempt, err?.message || err),
+        });
+
+        const parsed = safeParseJSON(raw);
+        if (!parsed || !Array.isArray(parsed.ranked) || parsed.ranked.length === 0) {
+            console.warn('LLM returned unparsable JSON or no ranked items. Raw (truncated):', raw.slice(0, 800));
+            console.log('Fallback — listing idea headlines:');
+            for (const it of ideasPayload) console.log(' - ' + it.idea);
             return;
         }
 
-        // Display parsed ranking
         console.log('--- Product Ideas (LLM-ranked) ---');
         for (let i = 0; i < parsed.ranked.length; i++) {
             const r = parsed.ranked[i];
@@ -780,12 +901,9 @@ ${JSON.stringify({ ideas: ideasPayload }, null, 2)}`;
             }
             console.log('---');
         }
-    }).catch((e) => {
+    } catch (e) {
         console.warn('LLM ranking failed entirely:', e?.message || e);
-        // Final fallback: list idea headlines
         console.log('Fallback — listing idea headlines:');
-        for (const it of ideasPayload) {
-            console.log(' - ' + it.idea);
-        }
-    });
+        for (const it of ideasPayload) console.log(' - ' + it.idea);
+    }
 }

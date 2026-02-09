@@ -2,6 +2,8 @@
 
 This project is a market research agent that uses Playwright to browse forums and Reddit, scrapes user posts, and analyzes them using OpenAI's GPT model to suggest potential product ideas.
 
+![](./recording.mov)
+
 ## Prerequisites
 
 1. **Node.js**: Install [Node.js](https://nodejs.org/) (v16 or higher recommended).
