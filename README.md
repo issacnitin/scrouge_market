@@ -2,7 +2,7 @@
 
 This project is a market research agent that uses Playwright to browse forums and Reddit, scrapes user posts, and analyzes them using OpenAI's GPT model to suggest potential product ideas.
 
-![Recording](./recording.mp4)
+![Recording](./recording.gif)
 
 ## Prerequisites
 
