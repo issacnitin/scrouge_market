@@ -1,0 +1,324 @@
+[
+  {
+    "insight": {
+      "summary": "{\n  \"summary\": \"JavaScript snippet that creates a Promise assigned to window.__",
+      "raw": "{\n  \"summary\": \"JavaScript snippet that creates a Promise assigned to window.__"
+    },
+    "timestamp": "2026-02-09T07:58:23.627Z"
+  },
+  {
+    "insight": {
+      "summary": "A short UI/navigation phrase typically used for skipping to the main webpage content.",
+      "sentiment": "neutral",
+      "topics": [
+        "navigation",
+        "accessibility",
+        "web UI",
+        "link text"
+      ],
+      "toxicityScore": 0
+    },
+    "timestamp": "2026-02-09T07:58:27.547Z"
+  },
+  {
+    "insight": {
+      "summary": "",
+      "raw": ""
+    },
+    "timestamp": "2026-02-09T07:58:32.825Z"
+  },
+  {
+    "insight": {
+      "summary": "A brief announcement promoting a forum for updates and discussions about Indian real estate.",
+      "sentiment": "neutral",
+      "topics": [
+        "Indian real estate",
+        "real estate updates",
+        "property forum",
+        "market discussions",
+        "housing"
+      ],
+      "toxicityScore": 0
+    },
+    "timestamp": "2026-02-09T07:58:43.656Z"
+  },
+  {
+    "insight": {
+      "summary": "A JavaScript snippet that creates a Promise assigned to window.__servedBy and exposes its resolve function as window.__servedByRes.",
+      "sentiment": "neutral",
+      "topics": [
+        "JavaScript",
+        "Promises",
+        "asynchronous",
+        "browser",
+        "global variable"
+      ],
+      "toxicityScore": 0
+    },
+    "timestamp": "2026-02-09T08:01:26.090Z"
+  },
+  {
+    "insight": {
+      "summary": "{\n  \"summary\": \"A common website 'skip link' phrase used to jump directly to the main content.\",\n  \"sentiment\": \"neutral\",\n  \"topics\": [\"web accessibility\", \"navigation\", \"skip link\",",
+      "raw": "{\n  \"summary\": \"A common website 'skip link' phrase used to jump directly to the main content.\",\n  \"sentiment\": \"neutral\",\n  \"topics\": [\"web accessibility\", \"navigation\", \"skip link\","
+    },
+    "timestamp": "2026-02-09T08:01:32.321Z"
+  },
+  {
+    "insight": {
+      "summary": "",
+      "raw": ""
+    },
+    "timestamp": "2026-02-09T08:01:37.744Z"
+  },
+  {
+    "insight": {
+      "summary": "",
+      "raw": ""
+    },
+    "timestamp": "2026-02-09T08:01:48.088Z"
+  },
+  {
+    "insight": {
+      "summary": "A forum for updates and discussions about real estate in India.",
+      "sentiment": "neutral",
+      "topics": [
+        "Indian real estate",
+        "forum",
+        "real estate updates",
+        "property discussions",
+        "India"
+      ],
+      "toxicityScore": 0
+    },
+    "timestamp": "2026-02-09T08:02:07.031Z"
+  },
+  {
+    "insight": {
+      "summary": "{\n  \"summary\": \"UI/navigation text from a Reddit page (r/indianrealestate) prompting users to open menus, get the app, and log in.\",\n  \"sentiment\": \"neutral\",\n  \"topics\": [\"Reddit\", \"UI/navigation\", \"r/indianrealestate\", \"app\", \"login\"],\n  \"toxicityScore\": 0",
+      "raw": "{\n  \"summary\": \"UI/navigation text from a Reddit page (r/indianrealestate) prompting users to open menus, get the app, and log in.\",\n  \"sentiment\": \"neutral\",\n  \"topics\": [\"Reddit\", \"UI/navigation\", \"r/indianrealestate\", \"app\", \"login\"],\n  \"toxicityScore\": 0"
+    },
+    "timestamp": "2026-02-09T08:02:26.793Z"
+  },
+  {
+    "insight": {
+      "summary": "{\n  \"summary\": \"A JavaScript snippet that creates a Promise assigned to window.__servedBy and exposes its resolve function as window.__servedByRes.\",\n  \"sentiment\": \"neutral\",\n  \"",
+      "raw": "{\n  \"summary\": \"A JavaScript snippet that creates a Promise assigned to window.__servedBy and exposes its resolve function as window.__servedByRes.\",\n  \"sentiment\": \"neutral\",\n  \""
+    },
+    "timestamp": "2026-02-09T08:05:05.422Z"
+  },
+  {
+    "insight": {
+      "summary": "A brief UI/navigation instruction commonly used as an accessibility shortcut (e.g., 'Skip to main content').",
+      "sentiment": "neutral",
+      "topics": [
+        "accessibility",
+        "web navigation",
+        "UI",
+        "screen-reader"
+      ],
+      "toxicityScore": 0
+    },
+    "timestamp": "2026-02-09T08:05:10.132Z"
+  },
+  {
+    "insight": {
+      "summary": "{\n  \"summary\": \"JavaScript snippet that sets a global flag (window.hasTabBeenBackgrounded) to the value of document.hidden to track whether the browser tab is backgrounded.\",\n  \"sentiment",
+      "raw": "{\n  \"summary\": \"JavaScript snippet that sets a global flag (window.hasTabBeenBackgrounded) to the value of document.hidden to track whether the browser tab is backgrounded.\",\n  \"sentiment"
+    },
+    "timestamp": "2026-02-09T08:05:15.043Z"
+  },
+  {
+    "insight": {
+      "summary": "A JavaScript snippet that creates a Promise assigned to window.__servedBy and exposes its resolve function as window.__servedByRes.",
+      "sentiment": "neutral",
+      "topics": [
+        "JavaScript",
+        "Promises",
+        "frontend",
+        "web",
+        "async"
+      ],
+      "toxicityScore": 0
+    },
+    "timestamp": "2026-02-09T08:06:57.352Z"
+  },
+  {
+    "insight": {
+      "summary": "{\n  \"summary\": \"JavaScript code that creates",
+      "raw": "{\n  \"summary\": \"JavaScript code that creates"
+    },
+    "timestamp": "2026-02-09T08:07:38.970Z"
+  },
+  {
+    "insight": {
+      "summary": "{\n  \"summary\": \"A brief navigation prompt instructing users to skip to the main content (commonly an accessibility link).\",\n  \"sentiment",
+      "raw": "{\n  \"summary\": \"A brief navigation prompt instructing users to skip to the main content (commonly an accessibility link).\",\n  \"sentiment"
+    },
+    "timestamp": "2026-02-09T08:07:47.007Z"
+  },
+  {
+    "insight": {
+      "summary": "{\n  \"summary\": \"A JavaScript one-liner assigning document.hidden to window.hasTabBeenBackgrounded to track if the browser tab has been backgrounded.\",\n  \"sentiment\": \"neutral\",",
+      "raw": "{\n  \"summary\": \"A JavaScript one-liner assigning document.hidden to window.hasTabBeenBackgrounded to track if the browser tab has been backgrounded.\",\n  \"sentiment\": \"neutral\","
+    },
+    "timestamp": "2026-02-09T08:07:54.005Z"
+  },
+  {
+    "insight": {
+      "summary": "",
+      "raw": ""
+    },
+    "timestamp": "2026-02-09T08:07:58.889Z"
+  },
+  {
+    "insight": {
+      "summary": "Announcement promoting a forum for updates and discussions about Indian real estate.",
+      "sentiment": "positive",
+      "topics": [
+        "Indian real estate",
+        "forum",
+        "real estate updates",
+        "property discussions",
+        "India"
+      ],
+      "toxicityScore": 0
+    },
+    "timestamp": "2026-02-09T08:08:27.533Z"
+  },
+  {
+    "insight": {
+      "summary": "{\n  \"summary\": \"A snippet of Reddit UI/navigation text referencing the r/indianrealestate subreddit, app download prompts, and log-in/menu options.\",\n  \"sentiment\": \"neutral\",\n  \"topics\": [\"reddit\", \"navigation\", \"r/indianrealestate\", \"app\", \"login\", \"user menu\"],\n  \"toxicityScore\":",
+      "raw": "{\n  \"summary\": \"A snippet of Reddit UI/navigation text referencing the r/indianrealestate subreddit, app download prompts, and log-in/menu options.\",\n  \"sentiment\": \"neutral\",\n  \"topics\": [\"reddit\", \"navigation\", \"r/indianrealestate\", \"app\", \"login\", \"user menu\"],\n  \"toxicityScore\":"
+    },
+    "timestamp": "2026-02-09T08:09:03.300Z"
+  },
+  {
+    "insight": {
+      "summary": "UI/navigation text prompting the user to open the menu or navigation and go to Reddit Home.",
+      "sentiment": "neutral",
+      "topics": [
+        "UI",
+        "navigation",
+        "Reddit",
+        "menu",
+        "accessibility"
+      ],
+      "toxicityScore": 0
+    },
+    "timestamp": "2026-02-09T08:09:07.591Z"
+  },
+  {
+    "insight": {
+      "summary": "A short UI text snippet indicating controls to open a menu and navigation.",
+      "sentiment": "neutral",
+      "topics": [
+        "UI",
+        "menu",
+        "navigation",
+        "accessibility"
+      ],
+      "toxicityScore": 0
+    },
+    "timestamp": "2026-02-09T08:09:11.483Z"
+  },
+  {
+    "insight": {
+      "summary": "User requests to open the menu.",
+      "sentiment": "neutral",
+      "topics": [
+        "UI",
+        "navigation",
+        "command",
+        "menu"
+      ],
+      "toxicityScore": 0
+    },
+    "timestamp": "2026-02-09T08:09:16.830Z"
+  },
+  {
+    "insight": {
+      "summary": "{\n  \"summary\": \"User asks which is better: a 1BHK in a city or in a village.\",\n  \"sentiment\": \"neutral\",\n  \"topics\": [\"housing\", \"1BHK\", \"urban vs rural\", \"cost of living\",",
+      "raw": "{\n  \"summary\": \"User asks which is better: a 1BHK in a city or in a village.\",\n  \"sentiment\": \"neutral\",\n  \"topics\": [\"housing\", \"1BHK\", \"urban vs rural\", \"cost of living\","
+    },
+    "timestamp": "2026-02-09T08:10:38.947Z"
+  },
+  {
+    "insight": {
+      "summary": "{\n  \"summary\": \"User notes there is a transmission line above the plot of land they plan to purchase.\",\n  \"sentiment\": \"neutral\",\n  \"topics",
+      "raw": "{\n  \"summary\": \"User notes there is a transmission line above the plot of land they plan to purchase.\",\n  \"sentiment\": \"neutral\",\n  \"topics"
+    },
+    "timestamp": "2026-02-09T08:10:43.448Z"
+  },
+  {
+    "insight": {
+      "summary": "{\n  \"summary\": \"The poster asks what specific trigger finally pushed people to buy (likely a home) after years of planning—examples include rent, family pressure, kids, fear of rising prices, or fatigue from searching.\",\n  \"sentiment\": \"neutral\",\n  \"topics\": [\n    \"home buying\",\n    \"decision triggers\",\n    \"housing market\",\n    \"rent\",\n    \"family pressure\",\n    \"kids\",\n    \"fear of rising prices\",\n    \"search fatigue\"\n  ],\n  \"toxicity",
+      "raw": "{\n  \"summary\": \"The poster asks what specific trigger finally pushed people to buy (likely a home) after years of planning—examples include rent, family pressure, kids, fear of rising prices, or fatigue from searching.\",\n  \"sentiment\": \"neutral\",\n  \"topics\": [\n    \"home buying\",\n    \"decision triggers\",\n    \"housing market\",\n    \"rent\",\n    \"family pressure\",\n    \"kids\",\n    \"fear of rising prices\",\n    \"search fatigue\"\n  ],\n  \"toxicity"
+    },
+    "timestamp": "2026-02-09T08:10:47.909Z"
+  },
+  {
+    "insight": {
+      "summary": "{\n  \"summary\": \"Asking whether a 1BHK in a city or living in a village is the better option.\",\n  \"sentiment\": \"neutral\",\n  \"topics\": [\"housing\", \"1BHK\", \"urban vs rural\",",
+      "raw": "{\n  \"summary\": \"Asking whether a 1BHK in a city or living in a village is the better option.\",\n  \"sentiment\": \"neutral\",\n  \"topics\": [\"housing\", \"1BHK\", \"urban vs rural\","
+    },
+    "timestamp": "2026-02-09T08:13:08.158Z"
+  },
+  {
+    "insight": {
+      "summary": "{\n  \"summary\": \"The user notes there is a transmission line above a plot of land they plan to buy.\",\n  \"sentiment\": \"neutral\",\n  \"topics\": [\"real estate\", \"property purchase",
+      "raw": "{\n  \"summary\": \"The user notes there is a transmission line above a plot of land they plan to buy.\",\n  \"sentiment\": \"neutral\",\n  \"topics\": [\"real estate\", \"property purchase"
+    },
+    "timestamp": "2026-02-09T08:13:13.877Z"
+  },
+  {
+    "insight": {
+      "summary": "",
+      "raw": ""
+    },
+    "timestamp": "2026-02-09T08:13:20.482Z"
+  },
+  {
+    "insight": {
+      "summary": "{\n  \"summary\": \"Welcome message for the IndianRealEstate subreddit, pointing readers to the comments for the description and directing infrastructure-related posts to r/IndiaInfrastructure.\",\n  \"sentiment\": \"neutral\",\n  \"topics\": [\n    \"IndianRealEstate\",\n    \"subreddit guidelines\",\n    \"infrastructure\",\n    \"",
+      "raw": "{\n  \"summary\": \"Welcome message for the IndianRealEstate subreddit, pointing readers to the comments for the description and directing infrastructure-related posts to r/IndiaInfrastructure.\",\n  \"sentiment\": \"neutral\",\n  \"topics\": [\n    \"IndianRealEstate\",\n    \"subreddit guidelines\",\n    \"infrastructure\",\n    \""
+    },
+    "timestamp": "2026-02-09T08:13:25.453Z"
+  },
+  {
+    "insight": {
+      "summary": "",
+      "raw": ""
+    },
+    "timestamp": "2026-02-09T08:13:32.004Z"
+  },
+  {
+    "insight": {
+      "summary": "{\n  \"summary\": \"Mentions 8x zoom capability on the iPhone 17 Pro.\",\n  \"sentiment\": \"neutral\",\n  \"topics\": [\n    \"iPhone 17 Pro\",\n    \"camera\",\n    \"8x zoom\",\n    \"smartphone photography\",\n    \"device specs\"\n  ],\n  \"toxicityScore\":",
+      "raw": "{\n  \"summary\": \"Mentions 8x zoom capability on the iPhone 17 Pro.\",\n  \"sentiment\": \"neutral\",\n  \"topics\": [\n    \"iPhone 17 Pro\",\n    \"camera\",\n    \"8x zoom\",\n    \"smartphone photography\",\n    \"device specs\"\n  ],\n  \"toxicityScore\":"
+    },
+    "timestamp": "2026-02-09T08:13:37.467Z"
+  },
+  {
+    "insight": {
+      "summary": "A brief, open-ended question asking what prompted someone to make a purchase.",
+      "sentiment": "neutral",
+      "topics": [
+        "purchase",
+        "buying decision",
+        "motivation",
+        "consumer behavior",
+        "question"
+      ],
+      "toxicityScore": 0
+    },
+    "timestamp": "2026-02-09T08:13:41.314Z"
+  },
+  {
+    "insight": {
+      "summary": "{\n  \"summary\": \"Asks what single factor typically pushes people to act after years of planning—rent, family pressure, kids, fear of rising prices, or simply being tired of searching.\",\n  \"sentiment\": \"neutral\",\n  \"topics\": [\n    \"home buying\",\n    \"decision triggers\",\n    \"rent\",\n    \"family pressure\",\n    \"children\",\n    \"housing prices\",",
+      "raw": "{\n  \"summary\": \"Asks what single factor typically pushes people to act after years of planning—rent, family pressure, kids, fear of rising prices, or simply being tired of searching.\",\n  \"sentiment\": \"neutral\",\n  \"topics\": [\n    \"home buying\",\n    \"decision triggers\",\n    \"rent\",\n    \"family pressure\",\n    \"children\",\n    \"housing prices\","
+    },
+    "timestamp": "2026-02-09T08:13:47.055Z"
+  }
+]
