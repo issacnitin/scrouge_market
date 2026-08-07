@@ -1,1 +1,21 @@
 node_modules/
+dist/
+coverage/
+
+# Secrets - never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Generated output
+insights.json
+insights.json.bak
+*.log
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
