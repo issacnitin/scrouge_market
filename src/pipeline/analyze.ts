@@ -26,7 +26,7 @@ async function analyzeOne(post: string, deps: AnalyzeDeps): Promise<AnalyzedPost
   const analysisRequest = analysisPrompt(post);
   const analysis = await client.complete({
     stage: 'analysis',
-    model: config.openai.models.analysis,
+    model: config.llm.models.analysis,
     system: analysisRequest.system,
     user: analysisRequest.user,
     maxOutputTokens: 800,
@@ -47,7 +47,7 @@ async function analyzeOne(post: string, deps: AnalyzeDeps): Promise<AnalyzedPost
   try {
     const result = await client.complete({
       stage: 'ideas',
-      model: config.openai.models.ideas,
+      model: config.llm.models.ideas,
       system: ideasRequest.system,
       user: ideasRequest.user,
       maxOutputTokens: 1_200,
@@ -72,7 +72,7 @@ export async function analyzePosts(
 
   const results = await mapWithConcurrency(
     posts,
-    deps.config.openai.concurrency,
+    deps.config.llm.concurrency,
     async (post) => {
       try {
         return await analyzeOne(post, deps);

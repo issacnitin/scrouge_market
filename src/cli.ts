@@ -5,6 +5,7 @@ export interface CliOptions {
   urls: string[];
   assumeYes: boolean;
   headless: boolean | undefined;
+  provider: string | undefined;
   help: boolean;
   version: boolean;
 }
@@ -18,13 +19,19 @@ Usage:
 Options:
   -u, --url <url>      Target URL. Repeat for multiple. Prompts interactively if omitted.
   -y, --yes            Never prompt between batches. Required for non-interactive use.
+      --provider <id>  LLM provider: openai (default) or github-models.
       --headless       Force headless browsing (overrides SHOW_BROWSER).
       --headful        Force a visible browser window.
   -h, --help           Show this help.
   -v, --version        Show the version.
 
+Authentication:
+  openai         Set OPENAI_API_KEY.
+  github-models  Uses your existing GitHub CLI login (\`gh auth login\`), or GITHUB_TOKEN
+                 with the "models:read" scope. No OpenAI key required.
+
 Environment:
-  OPENAI_API_KEY must be set. See .env.example for all supported variables.
+  See .env.example for all supported variables.
   Logs go to stderr; the ranked report goes to stdout, so it can be piped.
 `.trim();
 
@@ -34,6 +41,7 @@ export function parseCliArgs(argv: readonly string[]): CliOptions {
     options: {
       url: { type: 'string', short: 'u', multiple: true },
       yes: { type: 'boolean', short: 'y', default: false },
+      provider: { type: 'string' },
       headless: { type: 'boolean', default: false },
       headful: { type: 'boolean', default: false },
       help: { type: 'boolean', short: 'h', default: false },
@@ -51,6 +59,7 @@ export function parseCliArgs(argv: readonly string[]): CliOptions {
     urls: (values.url ?? []).flatMap((value) => value.split(',')).map((v) => v.trim()).filter(Boolean),
     assumeYes: values.yes === true,
     headless: values.headless ? true : values.headful ? false : undefined,
+    provider: values.provider?.trim() || undefined,
     help: values.help === true,
     version: values.version === true,
   };

@@ -83,7 +83,7 @@ export async function rankIdeas(
   const prompt = rankingPrompt(candidates);
   const result = await deps.client.complete({
     stage: 'ranking',
-    model: deps.config.openai.models.ranking,
+    model: deps.config.llm.models.ranking,
     system: prompt.system,
     user: prompt.user,
     maxOutputTokens: 6_000,

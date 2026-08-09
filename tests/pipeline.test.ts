@@ -17,8 +17,8 @@ const silentLogger = createLogger({ level: 'error', format: 'json', sink: () => 
 describe('loadConfig', () => {
   it('applies documented defaults', () => {
     const config = loadConfig({ OPENAI_API_KEY: API_KEY });
-    expect(config.openai.baseUrl).toBe('https://api.openai.com/v1');
-    expect(config.openai.models.analysis).toBe('gpt-4o-mini');
+    expect(config.llm.baseUrl).toBe('https://api.openai.com/v1');
+    expect(config.llm.models.analysis).toBe('gpt-4o-mini');
     expect(config.network.allowPrivateHosts).toBe(false);
     expect(config.browser.headless).toBe(false);
   });

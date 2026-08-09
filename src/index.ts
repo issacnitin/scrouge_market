@@ -39,6 +39,9 @@ async function main(): Promise<number> {
   if (options.headless !== undefined) {
     process.env.SHOW_BROWSER = options.headless ? '0' : '1';
   }
+  if (options.provider !== undefined) {
+    process.env.LLM_PROVIDER = options.provider;
+  }
 
   let config: AppConfig;
   try {
@@ -52,6 +55,10 @@ async function main(): Promise<number> {
   }
 
   const logger = createLogger({ level: config.logging.level, format: config.logging.format });
+  logger.info('llm provider ready', {
+    provider: config.llm.provider,
+    via: config.llm.credentialSource,
+  });
   const controller = new AbortController();
 
   // First signal requests a graceful stop so the browser and readline are torn down properly;

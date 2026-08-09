@@ -20,7 +20,7 @@ Scrouge is an AI-powered CLI agent that browses URLs (forums, subreddits, social
 
 - **Node.js ≥ 20.11**
 - **Playwright Chromium** — `npm run browsers`
-- **An OpenAI API key**
+- **An LLM credential** — either an OpenAI API key, or a GitHub account (see below)
 
 ## Setup
 
@@ -28,8 +28,34 @@ Scrouge is an AI-powered CLI agent that browses URLs (forums, subreddits, social
 git clone https://github.com/issacnitin/scrouge_market.git && cd scrouge_market
 npm install
 npm run browsers
-cp .env.example .env      # then fill in OPENAI_API_KEY
+cp .env.example .env      # then choose a provider
 ```
+
+### Authentication
+
+Scrouge supports two providers. Pick whichever you already have.
+
+**OpenAI** (default) — set `OPENAI_API_KEY`.
+
+**GitHub Models** — uses your GitHub account, so there is no OpenAI key to manage. It is
+included with GitHub Copilot and free GitHub plans, and is an officially supported,
+OpenAI-compatible endpoint.
+
+```bash
+gh auth login                                  # if you have the GitHub CLI
+npm run dev -- --provider github-models
+
+# or, without the GitHub CLI:
+$env:GITHUB_TOKEN = "ghp_..."                  # needs the "models:read" scope
+npm run dev -- --provider github-models
+```
+
+Credentials are resolved in this order: `GITHUB_TOKEN` → `GH_TOKEN` → `gh auth token`.
+
+> Scrouge deliberately does **not** talk to Copilot's internal chat endpoint or read tokens
+> out of VS Code's credential storage. That API is undocumented, restricted to first-party
+> clients, and using it from a third-party tool would breach the Copilot terms of service.
+> GitHub Models is the supported way to use your GitHub identity for inference.
 
 ## Usage
 
@@ -40,6 +66,9 @@ npm run dev
 # Non-interactive / scriptable
 npm run dev -- --url https://example.com/forum --yes --headless
 
+# Using your GitHub login instead of an OpenAI key
+npm run dev -- --provider github-models -u https://example.com/forum -y
+
 # The ranked report goes to stdout, logs go to stderr — so this works:
 npm run dev -- -u https://example.com/forum -y > report.txt
 ```
@@ -48,6 +77,7 @@ npm run dev -- -u https://example.com/forum -y > report.txt
 |---|---|
 | `-u, --url <url>` | Target URL. Repeatable, and accepts comma-separated values. |
 | `-y, --yes` | Never prompt between batches. Required for non-interactive use. |
+| `--provider <id>` | `openai` (default) or `github-models`. |
 | `--headless` / `--headful` | Force browser visibility, overriding `SHOW_BROWSER`. |
 | `-h, --help` | Show usage. |
 
@@ -59,9 +89,11 @@ All settings are environment variables, validated at startup — see [.env.examp
 
 | Variable | Default | Description |
 |---|---|---|
-| `OPENAI_API_KEY` | — | **Required.** |
-| `OPENAI_BASE_URL` | `https://api.openai.com/v1` | Point at a compatible gateway. |
-| `MODEL_ANALYSIS` / `MODEL_IDEAS` / `MODEL_RANKING` | `gpt-4o-mini`, `gpt-4o-mini`, `gpt-4o` | Per-stage models. |
+| `LLM_PROVIDER` | `openai` | `openai` or `github-models`. |
+| `OPENAI_API_KEY` | — | Required when the provider is `openai`. |
+| `GITHUB_TOKEN` / `GH_TOKEN` | — | Used by `github-models`; falls back to `gh auth token`. |
+| `OPENAI_BASE_URL` | per provider | Override to point at a compatible gateway. |
+| `MODEL_ANALYSIS` / `MODEL_IDEAS` / `MODEL_RANKING` | per provider | Per-stage models. |
 | `LLM_CONCURRENCY` | `4` | Max in-flight LLM requests. |
 | `LLM_TIMEOUT_MS` | `60000` | Hard per-request timeout. |
 | `MAX_POSTS_PER_URL` | `200` | Cost and memory ceiling. |
@@ -101,6 +133,7 @@ src/
 ├── llm/
 │   ├── client.ts         # Single LLM entry point: retry, concurrency, caching, validation
 │   ├── http.ts           # Timeout-enforcing JSON transport
+│   ├── provider.ts       # Provider registry and credential discovery
 │   ├── prompts.ts        # Injection-hardened prompt construction
 │   └── schemas.ts        # Zod + JSON schemas per stage
 ├── net/url-guard.ts      # SSRF validation

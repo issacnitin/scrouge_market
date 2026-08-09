@@ -73,7 +73,7 @@ export class LlmClient {
     private readonly config: AppConfig,
     private readonly logger: Logger,
   ) {
-    this.semaphore = new Semaphore(config.openai.concurrency);
+    this.semaphore = new Semaphore(config.llm.concurrency);
   }
 
   getUsage(): Readonly<LlmUsage> {
@@ -92,9 +92,9 @@ export class LlmClient {
 
     const result = await this.semaphore.run(() =>
       retry(() => this.execute(request), {
-        retries: this.config.openai.maxRetries,
+        retries: this.config.llm.maxRetries,
         baseDelayMs: 500,
-        maxDelayMs: this.config.openai.maxRetryDelayMs,
+        maxDelayMs: this.config.llm.maxRetryDelayMs,
         ...(request.signal ? { signal: request.signal } : {}),
         onRetry: ({ attempt, delayMs, error }) => {
           this.logger.warn('llm retry', {
@@ -136,10 +136,10 @@ export class LlmClient {
     let raw: unknown;
     try {
       raw = await postJson({
-        url: `${this.config.openai.baseUrl}/chat/completions`,
-        apiKey: this.config.openai.apiKey,
+        url: `${this.config.llm.baseUrl}/chat/completions`,
+        apiKey: this.config.llm.apiKey,
         body,
-        timeoutMs: this.config.openai.timeoutMs,
+        timeoutMs: this.config.llm.timeoutMs,
         ...(request.signal ? { signal: request.signal } : {}),
       });
     } catch (error) {

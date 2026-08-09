@@ -110,7 +110,7 @@ describe('analyzePosts', () => {
     });
 
     await analyzePosts(['a', 'b', 'c', 'd', 'e', 'f'], { client, config, logger });
-    expect(peak).toBeLessThanOrEqual(config.openai.concurrency);
+    expect(peak).toBeLessThanOrEqual(config.llm.concurrency);
   });
 
   it('reports progress for every post', async () => {

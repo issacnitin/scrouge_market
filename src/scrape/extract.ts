@@ -141,7 +141,7 @@ export async function extractPosts(deps: ExtractionDeps): Promise<string[]> {
         const prompt = candidatePrompt(batch.slice(0, 50));
         const result = await client.complete({
           stage: 'extract-candidates',
-          model: config.openai.models.extraction,
+          model: config.llm.models.extraction,
           system: prompt.system,
           user: prompt.user,
           maxOutputTokens: 4_000,
@@ -177,7 +177,7 @@ export async function extractPosts(deps: ExtractionDeps): Promise<string[]> {
         const prompt = extractionPrompt(chunk);
         const result = await client.complete({
           stage: 'extract-fulltext',
-          model: config.openai.models.extraction,
+          model: config.llm.models.extraction,
           system: prompt.system,
           user: prompt.user,
           maxOutputTokens: 4_000,

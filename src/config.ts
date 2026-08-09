@@ -1,5 +1,14 @@
 import { z } from 'zod';
 import { ConfigError } from './errors.js';
+import {
+  PROVIDERS,
+  PROVIDER_SPECS,
+  discoverCredential,
+  isProviderId,
+  type CommandRunner,
+  type ProviderId,
+  type ProviderSpec,
+} from './llm/provider.js';
 import { LOG_LEVELS, type LogLevel } from './logger.js';
 
 const boolFromEnv = (fallback: boolean) =>
@@ -32,70 +41,71 @@ const httpUrl = (fallback: string) =>
     }, 'must be a valid http(s) URL')
     .transform((v) => v.replace(/\/+$/, ''));
 
+// GitHub Models identifiers are publisher-qualified, so '/' is permitted.
 const modelName = (fallback: string) =>
   z
     .string()
     .trim()
     .optional()
     .transform((v) => (v === undefined || v === '' ? fallback : v))
-    .pipe(z.string().min(1).max(100).regex(/^[A-Za-z0-9._:-]+$/, 'invalid model name'));
+    .pipe(z.string().min(1).max(100).regex(/^[A-Za-z0-9._:/-]+$/, 'invalid model name'));
 
-const EnvSchema = z.object({
-  OPENAI_API_KEY: z
-    .string({ required_error: 'OPENAI_API_KEY is required' })
-    .trim()
-    .min(20, 'OPENAI_API_KEY looks truncated')
-    .refine((v) => !/\s/.test(v), 'OPENAI_API_KEY must not contain whitespace'),
-  OPENAI_BASE_URL: httpUrl('https://api.openai.com/v1'),
+const buildEnvSchema = (spec: ProviderSpec) =>
+  z.object({
+    OPENAI_BASE_URL: httpUrl(spec.defaultBaseUrl),
 
-  MODEL_EXTRACTION: modelName('gpt-4o-mini'),
-  MODEL_ANALYSIS: modelName('gpt-4o-mini'),
-  MODEL_IDEAS: modelName('gpt-4o-mini'),
-  MODEL_RANKING: modelName('gpt-4o'),
+    MODEL_EXTRACTION: modelName(spec.defaultModels.extraction),
+    MODEL_ANALYSIS: modelName(spec.defaultModels.analysis),
+    MODEL_IDEAS: modelName(spec.defaultModels.ideas),
+    MODEL_RANKING: modelName(spec.defaultModels.ranking),
 
-  LLM_TIMEOUT_MS: intFromEnv(60_000, 1_000, 600_000),
-  LLM_MAX_RETRIES: intFromEnv(4, 0, 10),
-  LLM_CONCURRENCY: intFromEnv(4, 1, 32),
-  LLM_MAX_RETRY_DELAY_MS: intFromEnv(30_000, 100, 300_000),
+    LLM_TIMEOUT_MS: intFromEnv(60_000, 1_000, 600_000),
+    LLM_MAX_RETRIES: intFromEnv(4, 0, 10),
+    LLM_CONCURRENCY: intFromEnv(4, 1, 32),
+    LLM_MAX_RETRY_DELAY_MS: intFromEnv(30_000, 100, 300_000),
 
-  SHOW_BROWSER: boolFromEnv(true),
-  NAV_TIMEOUT_MS: intFromEnv(20_000, 1_000, 120_000),
-  MAX_SCROLLS: intFromEnv(3, 0, 50),
-  BLOCK_HEAVY_ASSETS: boolFromEnv(true),
+    SHOW_BROWSER: boolFromEnv(true),
+    NAV_TIMEOUT_MS: intFromEnv(20_000, 1_000, 120_000),
+    MAX_SCROLLS: intFromEnv(3, 0, 50),
+    BLOCK_HEAVY_ASSETS: boolFromEnv(true),
 
-  INITIAL_BATCH_SIZE: intFromEnv(10, 1, 100),
-  CHUNK_SIZE: intFromEnv(3, 1, 50),
-  MAX_POSTS_PER_URL: intFromEnv(200, 1, 5_000),
-  MAX_POST_CHARS: intFromEnv(4_000, 200, 40_000),
-  MAX_CANDIDATE_BLOCKS: intFromEnv(80, 5, 500),
+    INITIAL_BATCH_SIZE: intFromEnv(10, 1, 100),
+    CHUNK_SIZE: intFromEnv(3, 1, 50),
+    MAX_POSTS_PER_URL: intFromEnv(200, 1, 5_000),
+    MAX_POST_CHARS: intFromEnv(4_000, 200, 40_000),
+    MAX_CANDIDATE_BLOCKS: intFromEnv(80, 5, 500),
 
-  ALLOW_PRIVATE_HOSTS: boolFromEnv(false),
+    ALLOW_PRIVATE_HOSTS: boolFromEnv(false),
 
-  PERSIST_INSIGHTS: boolFromEnv(false),
-  INSIGHTS_PATH: z
-    .string()
-    .trim()
-    .optional()
-    .transform((v) => (v === undefined || v === '' ? './insights.json' : v)),
-  MAX_STORED_INSIGHTS: intFromEnv(1_000, 10, 100_000),
+    PERSIST_INSIGHTS: boolFromEnv(false),
+    INSIGHTS_PATH: z
+      .string()
+      .trim()
+      .optional()
+      .transform((v) => (v === undefined || v === '' ? './insights.json' : v)),
+    MAX_STORED_INSIGHTS: intFromEnv(1_000, 10, 100_000),
 
-  LOG_LEVEL: z
-    .string()
-    .trim()
-    .optional()
-    .transform((v) => (v === undefined || v === '' ? 'info' : v.toLowerCase()))
-    .pipe(z.enum(LOG_LEVELS)),
-  LOG_FORMAT: z
-    .string()
-    .trim()
-    .optional()
-    .transform((v) => (v === undefined || v === '' ? 'pretty' : v.toLowerCase()))
-    .pipe(z.enum(['pretty', 'json'])),
-});
+    LOG_LEVEL: z
+      .string()
+      .trim()
+      .optional()
+      .transform((v) => (v === undefined || v === '' ? 'info' : v.toLowerCase()))
+      .pipe(z.enum(LOG_LEVELS)),
+    LOG_FORMAT: z
+      .string()
+      .trim()
+      .optional()
+      .transform((v) => (v === undefined || v === '' ? 'pretty' : v.toLowerCase()))
+      .pipe(z.enum(['pretty', 'json'])),
+  });
 
 export interface AppConfig {
-  readonly openai: {
+  readonly llm: {
+    readonly provider: ProviderId;
+    readonly providerLabel: string;
     readonly apiKey: string;
+    /** How the credential was found, for logging. Never contains the credential itself. */
+    readonly credentialSource: string;
     readonly baseUrl: string;
     readonly timeoutMs: number;
     readonly maxRetries: number;
@@ -135,9 +145,40 @@ export interface AppConfig {
   };
 }
 
-export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
-  const parsed = EnvSchema.safeParse(env);
+export interface LoadConfigOptions {
+  /** Injectable for tests so the GitHub CLI is never invoked from a unit test. */
+  commandRunner?: CommandRunner;
+}
 
+function resolveProvider(raw: string | undefined): ProviderId {
+  const value = (raw ?? 'openai').trim().toLowerCase();
+  if (!isProviderId(value)) {
+    throw new ConfigError(
+      `Unknown LLM_PROVIDER "${value}". Supported providers: ${PROVIDERS.join(', ')}.`,
+    );
+  }
+  return value;
+}
+
+function describeCredentialSource(
+  provider: ProviderId,
+  env: NodeJS.ProcessEnv,
+  spec: ProviderSpec,
+): string {
+  for (const name of spec.credentialEnvVars) {
+    if (env[name]?.trim()) return `${name} environment variable`;
+  }
+  return provider === 'github-models' ? 'GitHub CLI login (gh auth token)' : 'environment';
+}
+
+export function loadConfig(
+  env: NodeJS.ProcessEnv = process.env,
+  options: LoadConfigOptions = {},
+): AppConfig {
+  const provider = resolveProvider(env.LLM_PROVIDER);
+  const spec = PROVIDER_SPECS[provider];
+
+  const parsed = buildEnvSchema(spec).safeParse(env);
   if (!parsed.success) {
     const issues = parsed.error.issues
       .map((i) => `  - ${i.path.join('.') || '(root)'}: ${i.message}`)
@@ -151,9 +192,25 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     throw new ConfigError('CHUNK_SIZE must not exceed INITIAL_BATCH_SIZE');
   }
 
+  const credential = discoverCredential(provider, env, options.commandRunner);
+  if (!credential) {
+    throw new ConfigError(
+      `No credential found for provider "${provider}" (${spec.label}).\n${spec.setupHint}`,
+    );
+  }
+  if (/\s/.test(credential)) {
+    throw new ConfigError(`The ${spec.label} credential must not contain whitespace.`);
+  }
+  if (credential.length < 20) {
+    throw new ConfigError(`The ${spec.label} credential looks truncated.`);
+  }
+
   return {
-    openai: {
-      apiKey: e.OPENAI_API_KEY,
+    llm: {
+      provider,
+      providerLabel: spec.label,
+      apiKey: credential,
+      credentialSource: describeCredentialSource(provider, env, spec),
       baseUrl: e.OPENAI_BASE_URL,
       timeoutMs: e.LLM_TIMEOUT_MS,
       maxRetries: e.LLM_MAX_RETRIES,
